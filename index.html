@@ -1,0 +1,39 @@
+// --- Buffer para ensamblar JSON fragmentado ---
+let jsonBuffer = "";
+
+// --- Manejo de datos entrantes ---
+function handleData(event) {
+    const value = event.target.value;
+    const decoder = new TextDecoder('utf-8');
+    const text = decoder.decode(value);
+
+    jsonBuffer += text; // acumulamos fragmentos
+
+    // Intentamos detectar si llegó un JSON completo
+    if (jsonBuffer.trim().endsWith("}")) {
+        try {
+            const data = JSON.parse(jsonBuffer);  // Intento de parseo
+            jsonBuffer = ""; // limpiar buffer
+
+            // Si llegan las temperaturas, asignar
+            if (data.s1 !== undefined) temps[0] = Number(data.s1);
+            if (data.s2 !== undefined) temps[1] = Number(data.s2);
+            if (data.s3 !== undefined) temps[2] = Number(data.s3);
+            if (data.s4 !== undefined) temps[3] = Number(data.s4);
+
+            // Si llegan estados del ESP32
+            if (data.vent !== undefined) ventilador = !!data.vent;
+            if (data.cal !== undefined) calefactor = !!data.cal;
+
+            // Pulso de activity
+            const pingDot = document.getElementById('connectionDot');
+            pingDot.classList.add('animate-pulse');
+            setTimeout(()=> pingDot.classList.remove('animate-pulse'), 400);
+
+            actualizarLecturasFromTemps();
+
+        } catch (e) {
+            console.warn("⚠️ Fragmento JSON inválido, esperando más datos…");
+        }
+    }
+}
